@@ -1,0 +1,32 @@
+version: '3'
+services:
+  esphome:
+    image: ghcr.io/esphome/esphome:latest
+    container_name: esphome
+    restart: unless-stopped
+    volumes:
+      - ${CONFIGPATH}:/config
+    environment:
+      - ESPHOME_USERNAME=${USERNAME}
+      - ESPHOME_PASSWORD=${PASSWORD}
+      - ESPHOME_TRUSTED_DOMAINS=${TRUSTED_DOMAINS}
+    ports:
+      - "6055:6055"
+#uncomment if needed direct access without traefik
+#      - "6052:6052"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.esphome-rt.rule=Host(`${DOMAIN}`) && PathPrefix(`/esphome`)"
+      - "traefik.http.routers.esphome-rt.entrypoints=https-ep"
+      - "traefik.http.routers.esphome-rt.tls=true"
+      - "traefik.http.routers.esphome-rt.middlewares=esphome-strip-mw@docker"
+      - "traefik.http.middlewares.esphome-strip-mw.stripprefix.prefixes=/esphome"
+
+      - "traefik.http.routers.esphome-rt.service=esphome-srv"
+      - "traefik.http.services.esphome-srv.loadbalancer.server.port=6052"
+      - homepage.group=IoT
+      - homepage.name=espBuilder
+      - homepage.icon=sh-esphome.svg
+      - homepage.href=https://${DOMAIN}/esphome
+      - homepage.description=espHome Remote Device Builder
+    network_mode: bridge
